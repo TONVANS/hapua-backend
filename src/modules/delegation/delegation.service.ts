@@ -173,7 +173,25 @@ export class DelegationService {
     });
     if (!act) throw new NotFoundException('Activity not found');
 
-    if (act.status !== 'UPCOMING')
+    if (act.status === 'CANCELED')
+      throw new BadRequestException('Activity has been canceled');
+
+    // Check if activity start date has been reached
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    let actDateStr = '';
+    if (act.date instanceof Date) {
+      actDateStr = act.date.toISOString().split('T')[0];
+    } else if (typeof act.date === 'string') {
+      actDateStr = (act.date as string).split('T')[0];
+    }
+    if (actDateStr && todayStr < actDateStr) {
+      throw new BadRequestException(
+        'Registration is not yet open. It will open on the activity start date.',
+      );
+    }
+
+    if (act.status !== 'UPCOMING' && act.status !== 'ONGOING')
       throw new BadRequestException(
         'Activity is not available for registration',
       );

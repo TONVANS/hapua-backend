@@ -174,11 +174,41 @@ export class ActivityService {
         room: true,
         galleries: true,
         _count: { select: { delegations: true } },
+        delegations: {
+          orderBy: { registeredAt: 'desc' },
+          include: {
+            delegation: {
+              select: {
+                id: true,
+                title: true,
+                firstName: true,
+                lastName: true,
+                position: true,
+                delegationCode: true,
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                    code: true,
+                  },
+                },
+                organization: {
+                  select: {
+                    id: true,
+                    name: true,
+                    shortName: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
     if (!activity) throw new NotFoundException('Activity not found');
     return {
       ...activity,
+      totalDelegations: activity._count?.delegations ?? activity.delegations?.length ?? 0,
       status: this.computeStatus(activity.startTime, activity.endTime, activity.status),
     };
   }
