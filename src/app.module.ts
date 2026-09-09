@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import * as path from 'path';
@@ -71,6 +72,10 @@ import { DEFAULT_EXTERNAL_STORAGE_PATH, DEFAULT_MEDIA_URL_PREFIX } from './modul
         limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
       },
     ]),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: parseInt(process.env.CACHE_TTL || '60000', 10),
+    }),
     PrismaModule,
     AuthModule,
     CountryModule,

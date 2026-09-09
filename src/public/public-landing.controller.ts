@@ -1,5 +1,7 @@
 import { ApiTags } from '@nestjs/swagger';
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { ActivityService } from '../modules/activity/activity.service';
 import { HotelService } from '../modules/hotel/hotel.service';
@@ -10,6 +12,7 @@ import { SortOrder } from '../common/dto/pagination-query.dto';
 @ApiTags('Public - Landing Overview')
 @Controller('public/landing')
 @Public()
+@UseInterceptors(CacheInterceptor)
 export class PublicLandingController {
   constructor(
     private readonly activityService: ActivityService,
@@ -18,6 +21,9 @@ export class PublicLandingController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @CacheTTL(120000)
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
   @Get()
   async getLandingOverview() {
     const [

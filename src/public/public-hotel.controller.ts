@@ -1,5 +1,7 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Header, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Throttle } from '@nestjs/throttler';
 import { HotelService } from '../modules/hotel/hotel.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { Public } from '../common/decorators/public.decorator';
@@ -7,9 +9,13 @@ import { Public } from '../common/decorators/public.decorator';
 @ApiTags('Public - Hotel')
 @Controller('public/hotels')
 @Public()
+@UseInterceptors(CacheInterceptor)
 export class PublicHotelController {
   constructor(private readonly hotelService: HotelService) {}
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @CacheTTL(120000)
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
   @Get()
   @ApiOperation({
     summary:
@@ -23,6 +29,9 @@ export class PublicHotelController {
     return this.hotelService.findAll(query);
   }
 
+  @Throttle({ default: { limit: 40, ttl: 60000 } })
+  @CacheTTL(120000)
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
   @Get(':id')
   @ApiOperation({
     summary:
