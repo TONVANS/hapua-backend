@@ -21,6 +21,11 @@ export class PublicLandingController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
+
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @CacheTTL(120000)
   @Header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
