@@ -48,7 +48,7 @@ export class PublicLandingController {
       this.hotelService.findAll({
         limit: 6,
         page: 1,
-        sortBy: 'starRating',
+        sortBy: 'createdAt',
         sortOrder: SortOrder.DESC,
       }),
       this.travelService.findAll({
