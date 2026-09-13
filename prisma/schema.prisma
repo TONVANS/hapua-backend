@@ -243,3 +243,17 @@ model Organization {
     // ຄວາມສຳພັນ (1 ອົງກອນ ມີແຂກຫຼາຍຄົນ)
     delegations Delegation[]
 }
+
+// ------------------------------------------------------
+// 8. ສະຖິຕິການເຂົ້າຊົມເວັບໄຊ (Website Visitor Counter)
+// ------------------------------------------------------
+model SiteVisit {
+    id        String   @id @default(uuid())
+    ipHash    String?  // SHA-256 hash ຂອງ IP ເພື່ອປ້ອງກັນການນັບຊ້ຳ ແລະ ເຄົາລົບ Privacy
+    userAgent String?  @db.Text
+    path      String?  @default("/")
+    createdAt DateTime @default(now())
+
+    @@index([createdAt])
+    @@index([ipHash, createdAt])
+}

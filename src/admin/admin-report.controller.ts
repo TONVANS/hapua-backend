@@ -13,15 +13,35 @@ export class AdminReportController {
 
   @Get('dashboard')
   async getDashboardStats() {
-    const [totalDelegations, totalActivities, totalRooms, totalHotels] =
-      await Promise.all([
-        this.prisma.delegation.count(),
-        this.prisma.activity.count(),
-        this.prisma.room.count(),
-        this.prisma.hotelRecommend.count(),
-      ]);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
-    return { totalDelegations, totalActivities, totalRooms, totalHotels };
+    const [
+      totalDelegations,
+      totalActivities,
+      totalRooms,
+      totalHotels,
+      totalVisits,
+      todayVisits,
+    ] = await Promise.all([
+      this.prisma.delegation.count(),
+      this.prisma.activity.count(),
+      this.prisma.room.count(),
+      this.prisma.hotelRecommend.count(),
+      this.prisma.siteVisit.count(),
+      this.prisma.siteVisit.count({
+        where: { createdAt: { gte: startOfToday } },
+      }),
+    ]);
+
+    return {
+      totalDelegations,
+      totalActivities,
+      totalRooms,
+      totalHotels,
+      totalVisits,
+      todayVisits,
+    };
   }
 
   @Get('activity-registrations')

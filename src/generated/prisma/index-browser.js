@@ -242,6 +242,14 @@ exports.Prisma.OrganizationScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.SiteVisitScalarFieldEnum = {
+  id: 'id',
+  ipHash: 'ipHash',
+  userAgent: 'userAgent',
+  path: 'path',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -299,7 +307,8 @@ exports.Prisma.ModelName = {
   TravelRecommend: 'TravelRecommend',
   TravelImage: 'TravelImage',
   Country: 'Country',
-  Organization: 'Organization'
+  Organization: 'Organization',
+  SiteVisit: 'SiteVisit'
 };
 
 /**
