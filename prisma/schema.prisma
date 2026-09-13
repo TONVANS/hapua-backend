@@ -100,6 +100,8 @@ model Activity {
     name                 String
     description          String?      @db.Text
     qrCode               String?      @unique // QR Code ສຳລັບ scan ລົງທະບຽນເຂົ້າຮ່ວມກິດຈະກຳ
+    docURL               String?      @db.Text
+    allImageURL          String?      @db.Text
     date                 DateTime     @db.Date
     startTime            DateTime
     endTime              DateTime

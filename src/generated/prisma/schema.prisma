@@ -99,7 +99,9 @@ model Activity {
   id                   String         @id @default(uuid())
   name                 String
   description          String?        @db.Text
-  qrCode               String?        @unique // QR Code ສຳລັບ scan ເບິ່ງກິດຈະກຳ
+  qrCode               String?        @unique // QR Code ສຳລັບ scan ລົງທະບຽນເຂົ້າຮ່ວມກິດຈະກຳ
+  docURL               String?        @db.Text
+  allImageURL          String?        @db.Text
   date                 DateTime       @db.Date
   startTime            DateTime
   endTime              DateTime

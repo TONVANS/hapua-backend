@@ -153,6 +153,8 @@ exports.Prisma.ActivityScalarFieldEnum = {
   name: 'name',
   description: 'description',
   qrCode: 'qrCode',
+  docURL: 'docURL',
+  allImageURL: 'allImageURL',
   date: 'date',
   startTime: 'startTime',
   endTime: 'endTime',
