@@ -13,6 +13,8 @@ import {
   SortOrder,
 } from '../../common/dto/pagination-query.dto';
 import { Prisma } from '../../generated/prisma';
+import type { Response } from 'express';
+import { Readable } from 'stream';
 
 @Injectable()
 export class DelegationService {
@@ -223,5 +225,161 @@ export class DelegationService {
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.delegation.delete({ where: { id } });
+  }
+
+  async exportDelegationsStream(
+    res: Response,
+    query?: { search?: string; countryId?: string; organizationId?: string },
+  ) {
+    const { search, countryId, organizationId } = query || {};
+
+    const where: Prisma.DelegationWhereInput = {
+      ...(search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { delegationCode: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(countryId ? { countryId } : {}),
+      ...(organizationId ? { organizationId } : {}),
+    };
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `delegations_export_${dateStr}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    const escapeCsvField = (value: unknown): string => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      if (
+        str.includes(',') ||
+        str.includes('"') ||
+        str.includes('\n') ||
+        str.includes('\r')
+      ) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const headers = [
+      'Delegation Code',
+      'Title',
+      'First Name',
+      'Last Name',
+      'Full Name',
+      'Email',
+      'Phone Number',
+      'Position',
+      'Organization',
+      'Country',
+      'Role',
+      'Activities Registered',
+      'Created At',
+    ];
+
+    const prisma = this.prisma;
+    const BATCH_SIZE = 500;
+
+    async function* generateCsvChunks() {
+      // 1. Send UTF-8 BOM so Excel opens UTF-8 characters (Thai, Lao, etc.) cleanly
+      yield '\uFEFF';
+
+      // 2. Send Header row
+      yield headers.map(escapeCsvField).join(',') + '\r\n';
+
+      // 3. Query in cursor batches to avoid memory overload (O(1) memory footprint)
+      let cursorId: string | undefined = undefined;
+
+      while (true) {
+        const batch = await prisma.delegation.findMany({
+          where,
+          take: BATCH_SIZE,
+          skip: cursorId ? 1 : 0,
+          cursor: cursorId ? { id: cursorId } : undefined,
+          orderBy: { id: 'asc' },
+          include: {
+            country: { select: { name: true, code: true } },
+            organization: { select: { name: true, shortName: true } },
+            _count: { select: { activities: true } },
+          },
+        });
+
+        if (batch.length === 0) {
+          break;
+        }
+
+        let chunk = '';
+        for (const item of batch) {
+          const orgName = item.organization
+            ? item.organization.shortName
+              ? `${item.organization.shortName} - ${item.organization.name}`
+              : item.organization.name
+            : '';
+          const countryName = item.country
+            ? item.country.code
+              ? `${item.country.name} (${item.country.code})`
+              : item.country.name
+            : '';
+          const fullName = `${item.title ? item.title + ' ' : ''}${item.firstName} ${item.lastName}`.trim();
+          const createdAt = item.createdAt
+            ? new Date(item.createdAt).toISOString()
+            : '';
+
+          const row = [
+            item.delegationCode || '',
+            item.title || '',
+            item.firstName || '',
+            item.lastName || '',
+            fullName,
+            item.email || '',
+            item.phoneNumber || '',
+            item.position || '',
+            orgName,
+            countryName,
+            item.role || '',
+            item._count?.activities ?? 0,
+            createdAt,
+          ];
+
+          chunk += row.map(escapeCsvField).join(',') + '\r\n';
+        }
+
+        yield chunk;
+
+        cursorId = batch[batch.length - 1].id;
+        if (batch.length < BATCH_SIZE) {
+          break;
+        }
+      }
+    }
+
+    const stream = Readable.from(generateCsvChunks());
+
+    await new Promise<void>((resolve, reject) => {
+      stream.on('error', (err) => {
+        if (!res.headersSent) {
+          res
+            .status(500)
+            .json({ statusCode: 500, message: 'Export streaming error' });
+        }
+        reject(err);
+      });
+
+      res.on('finish', () => resolve());
+      res.on('close', () => {
+        stream.destroy();
+        resolve();
+      });
+
+      stream.pipe(res);
+    });
   }
 }

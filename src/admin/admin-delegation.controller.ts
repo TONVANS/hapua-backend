@@ -8,7 +8,9 @@ import {
   Param,
   Delete,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { DelegationService } from '../modules/delegation/delegation.service';
 import { CreateDelegationDto } from '../modules/delegation/dto/create-delegation.dto';
 import { UpdateDelegationDto } from '../modules/delegation/dto/update-delegation.dto';
@@ -34,6 +36,20 @@ export class AdminDelegationController {
     query: PaginationQueryDto & { countryId?: string; organizationId?: string },
   ) {
     return this.delegationService.findAll(query);
+  }
+
+  @Get('export')
+  async export(
+    @Res() res: Response,
+    @Query('search') search?: string,
+    @Query('countryId') countryId?: string,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    return this.delegationService.exportDelegationsStream(res, {
+      search,
+      countryId,
+      organizationId,
+    });
   }
 
   @Get(':id')
