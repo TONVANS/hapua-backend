@@ -249,7 +249,7 @@ export class ActivityService {
   async getAgenda() {
     const activities = await this.prisma.activity.findMany({
       where: { status: { not: 'CANCELED' } },
-      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }, { updatedAt: 'desc' }],
       select: {
         id: true,
         name: true,
