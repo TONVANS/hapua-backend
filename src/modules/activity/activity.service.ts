@@ -140,7 +140,7 @@ export class ActivityService {
         where,
         skip,
         take: limit,
-        orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+        orderBy: [{ date: 'asc' }, { startTime: 'asc' }, { updatedAt: 'desc' }],
         select: {
           id: true,
           name: true,
